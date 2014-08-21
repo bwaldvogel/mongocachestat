@@ -1,8 +1,8 @@
 mongocachestat: mongocachestat.o
-	g++ -pthread -o mongocachestat mongocachestat.o /usr/lib64/libmongoclient.a /usr/lib64/libboost_filesystem.a /usr/lib64/libboost_thread.a /usr/lib64/libboost_system.a
+	${CXX} -pthread -o mongocachestat mongocachestat.o -lmongoclient
 
 mongocachestat.o: mongocachestat.cpp
-	g++ -Wall -Wformat=2 -c mongocachestat.cpp
+	${CXX} -Wall -Wformat=2 -c mongocachestat.cpp
 
 clean:
 	-rm mongocachestat.o
