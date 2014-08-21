@@ -22,7 +22,13 @@ Building
 Usage
 -----
 
-Mongodb needs to be up and running.
+MongoDB needs to be up and running.
+
+    # ./mongocachestat [--directoryPerDb] <dbpath> [<host:port>]
+
+Example:
+
+    # ./mongocachestat /data/mongodb localhost:27017
 
 
 Implementation detail
