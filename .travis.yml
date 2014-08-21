@@ -7,7 +7,7 @@ compiler:
 install:
     - sudo apt-get update -qq
     - sudo apt-get remove --purge mongodb-10gen
-    - sudo apt-get -q install -y mongodb-dev
+    - sudo apt-get -q install -y mongodb
 
 script:
     - make
