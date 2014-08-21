@@ -16,8 +16,8 @@ Prerequisites
 Building
 --------
 
-# apt-get install mongodb-dev (or equivalent on your Linux distro)
-# make
+    # apt-get install mongodb-dev (or equivalent on your Linux distro)
+    # make
 
 Usage
 -----
