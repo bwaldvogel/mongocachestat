@@ -5,6 +5,8 @@ compiler:
     - clang
 
 install:
+    - sudo apt-get update -qq
+    - sudo apt-get remove --purge mongodb-10gen
     - sudo apt-get -q install -y mongodb-dev libmongo-client-dev libboost-system-dev libboost-regex-dev libboost-thread-dev libboost-filesystem-dev
 
 script:
