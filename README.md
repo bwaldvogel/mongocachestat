@@ -35,8 +35,8 @@ Implementation detail
 ---------------------
 
 Potential "Heisenberg effects" (i.e. changing the cache state by measuring with
-this tool) are tried to minimized by using `madvise(…, …, MADV_RANDOM)`. It
-turns off Linux kernel read-ahead and read-behind. We call it Heisenberg
+this tool) are tried to be minimized by using `madvise(…, …, MADV_RANDOM)`.
+It turns off Linux kernel read-ahead and read-behind. We call it Heisenberg
 compensator in analogy to a famous science fiction series.
 
 
