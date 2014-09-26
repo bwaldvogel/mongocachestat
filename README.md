@@ -16,7 +16,7 @@ Prerequisites
 Building
 --------
 
-    # apt-get install mongodb-dev (or equivalent on your Linux distro)
+    # apt-get install mongodb-dev libmongo-client-dev libboost-system-dev libboost-regex-dev libboost-thread-dev libboost-filesystem-dev
     # make
 
 Usage
