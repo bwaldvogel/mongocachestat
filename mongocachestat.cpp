@@ -144,22 +144,14 @@ static void scan(DBClientConnection& c, const string& dbpath, const string& db, 
     unsigned long cachedObjects = 0;
     unsigned long uncachedObjects = 0;
 
-    BSONObj fields = BSONObjBuilder().append("_id", 1).obj();
-    Query query = BSONObjBuilder()
+    const BSONObj fields = BSONObjBuilder().append("_id", 1).obj();
+    const Query query = BSONObjBuilder()
                   .append("$query", BSONObj())
                   .append("$orderby", fields)
                   .append("$hint", fields)
                   .append("$showDiskLoc", 1).obj();
 
-    string ns = db + "." + collection;
-
-    /*
-     *
-     * https://jira.mongodb.org/browse/SERVER-5372
-     *
-     * $showDiskLoc does not work with covered indexes in get more
-     *
-     */
+    const string ns = db + "." + collection;
 
     map<string, mapping> mappings;
 
