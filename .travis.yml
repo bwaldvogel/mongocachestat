@@ -5,12 +5,7 @@ compiler:
     - clang
 
 install:
-    # http://docs.mongodb.org/manual/tutorial/install-mongodb-on-debian/
-    - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
-    - echo 'deb http://downloads-distro.mongodb.org/repo/debian-sysvinit dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
-    - sudo apt-get update -qq
-    - sudo apt-get remove --purge mongodb-10gen
-    - sudo apt-get -q install -y mongodb-org
+    - sudo apt-get -q install -y mongodb-dev libmongo-client-dev libboost-system-dev libboost-regex-dev libboost-thread-dev libboost-filesystem-dev
 
 script:
     - make

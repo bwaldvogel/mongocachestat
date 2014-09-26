@@ -1,9 +1,7 @@
-mongocachestat: mongocachestat.o
-	${CXX} -pthread -o mongocachestat mongocachestat.o -lmongoclient
+LIBS=-lmongoclient -lboost_thread -lboost_system -lboost_regex -lboost_filesystem -lssl -lcrypto
 
-mongocachestat.o: mongocachestat.cpp
-	${CXX} -Wall -Wformat=2 -c mongocachestat.cpp
+mongocachestat: mongocachestat.cpp
+	${CXX} -Wall -Wformat=2 mongocachestat.cpp -pthread ${LIBS} -o mongocachestat
 
 clean:
-	-rm mongocachestat.o
 	-rm mongocachestat
