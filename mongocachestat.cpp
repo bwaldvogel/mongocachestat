@@ -247,6 +247,26 @@ static list<string> getCollectionNames(DBClientConnection& c, const string& db )
     return names;
 }
 
+void checkVersion(DBClientConnection& c) {
+    cout << "checking server version" << endl;
+    BSONObj info;
+
+    if (!c.runCommand("admin", BSON("buildinfo" << 1), info)) {
+        throw runtime_error("failed to query server buildinfo");
+    }
+
+    const vector<BSONElement>& versionArray = info["versionArray"].Array();
+    const int major = versionArray[0].Int();
+    const int minor = versionArray[1].Int();
+
+    if (major < 2 || (major == 2 && minor < 6)) {
+        ostringstream s;
+        s << "version " << info["version"].String() << " is not supported. At least 2.6 is required" << endl;
+        s << " see: https://jira.mongodb.org/browse/SERVER-5372" << endl;
+        throw runtime_error(s.str());
+    }
+}
+
 int main(int args, const char* argv[]) {
     if (args < 2) {
         cerr << "usage: " << argv[0] << " [--directoryPerDb] <dbpath> [<host:port>]" << endl;
@@ -289,6 +309,8 @@ int main(int args, const char* argv[]) {
         c.connect(host);
 
         cout << "connected to " << host << endl;
+
+        checkVersion(c);
 
         cout << endl;
         cout << "  database |   collection    |   objects  |    cached  |  rate   |  pages | pages size |  objs size |  ratio" << endl;
