@@ -47,7 +47,7 @@ static bool isIncore(unsigned char* addr, int32_t length, set<void*>& cachedPage
     return true;
 }
 
-static string createFilepath(const string& path, const string& database, int number, bool directoryPerDb) {
+static string resolveFilepath(const string& path, const string& database, int number, bool directoryPerDb) {
     if (number < 0) {
         throw invalid_argument("negative number");
     }
@@ -164,11 +164,6 @@ static void scan(DBClientConnection& c, const string& dbpath, const string& db, 
             throw runtime_error(string("object id not found: ") + obj.toString());
         }
 
-        if (++total % 10000 == 0) {
-            printf("\r%10s | %15s | %10lu | %10lu ", db.c_str(), collection.c_str(), total, cachedObjects);
-            fflush(stdout);
-        }
-
         const BSONObj& diskLoc = obj.getObjectField("$diskLoc");
         if (diskLoc.isEmpty()) {
             ostringstream s;
@@ -180,7 +175,7 @@ static void scan(DBClientConnection& c, const string& dbpath, const string& db, 
         int file = diskLoc["file"].Int();
         const int offset = diskLoc["offset"].Int();
 
-        const string filepath = createFilepath(dbpath, db, file, directoryPerDb);
+        const string filepath = resolveFilepath(dbpath, db, file, directoryPerDb);
         mapping& mapping = mappings[filepath];
         if (!mapping.mapped()) {
             mapping.map(filepath);
@@ -188,32 +183,51 @@ static void scan(DBClientConnection& c, const string& dbpath, const string& db, 
 
         unsigned char* data = mapping.getData();
 
+        static const int headerSize = 16; // found by reverse engineering
+
         if (!isIncore(data + offset, sizeof(int32_t), cachedPages)) {
             uncachedObjects++;
         }
         else {
-            int32_t objSize = *((int32_t*)&(data[offset]));
-            if (objSize <= 1 || objSize > 1024*1024) {
+            int32_t docSize = *((int32_t*)&(data[offset]));
+            int32_t objSize = *((int32_t*)&(data[offset + headerSize]));
+            if (docSize <= 1 || docSize > 1024*1024) {
+                ostringstream s;
+                s << "illegal document size: " << objSize;
+                throw runtime_error(s.str());
+            }
+            if (objSize >= docSize || objSize <= 1 || objSize > 1024*1024) {
                 ostringstream s;
                 s << "illegal object size: " << objSize;
                 throw runtime_error(s.str());
             }
 
-            if (isIncore(data + offset, objSize, cachedPages)) {
-                // validate BSON end
-                unsigned char* end = data + offset + objSize - 1;
+            if (isIncore(data + offset, docSize, cachedPages)) {
+                const int endOffset = offset + headerSize + objSize - 1;
+                // validate BSON consistency by checking the last byte which must be 0 according to the specs
+                // since the entire document seems to be incore we assume not to cause paging by accessing the data here
+                const unsigned char* end = data + endOffset;
                 if (*end != '\0') {
                     ostringstream s;
-                    s << hex << (short)(*end);
-                    throw runtime_error(string("unexpected end: ") + s.str());
+                    s << "illegal BSON last byte: ";
+                    s << hex << (short)(*end) << " (hex)" << dec;
+                    s << " for " << obj << " with size " << objSize;
+                    s << ". Expected is a zero byte. Either the mongo server version is not supported or the data is corrupt.";
+                    throw runtime_error(s.str());
                 }
-                cachedData += objSize;
+                cachedData += docSize;
                 cachedObjects++;
             }
             else {
                 uncachedObjects++;
             }
         }
+
+        if (++total % 10000 == 0) {
+            printf("\r%10s | %15s | %10lu | %10lu ", db.c_str(), collection.c_str(), total, cachedObjects);
+            fflush(stdout);
+        }
+
     }
     mappings.clear();
 
@@ -255,16 +269,20 @@ void checkVersion(DBClientConnection& c) {
         throw runtime_error("failed to query server buildinfo");
     }
 
+    const string version = info["version"].String();
+
     const vector<BSONElement>& versionArray = info["versionArray"].Array();
     const int major = versionArray[0].Int();
     const int minor = versionArray[1].Int();
 
     if (major < 2 || (major == 2 && minor < 6)) {
         ostringstream s;
-        s << "version " << info["version"].String() << " is not supported. At least 2.6 is required" << endl;
+        s << "version " << version << " is not supported. At least 2.6 is required" << endl;
         s << " see: https://jira.mongodb.org/browse/SERVER-5372" << endl;
         throw runtime_error(s.str());
     }
+
+    cout << "server version " << version << " OK" << endl;
 }
 
 int main(int args, const char* argv[]) {
